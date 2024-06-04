@@ -1466,6 +1466,10 @@ func (c *ServerCommand) Run(args []string) int {
 	sort.Strings(infoKeys)
 	c.UI.Output("==> Vault server configuration:\n")
 
+	if c.flagCLIDump != "" {
+		c.generatePprofData()
+	}
+
 	for _, k := range infoKeys {
 		c.UI.Output(fmt.Sprintf(
 			"%24s: %s",
@@ -1527,6 +1531,10 @@ func (c *ServerCommand) Run(args []string) int {
 		return 1
 	}
 
+	if c.flagCLIDump != "" {
+		c.generatePprofData()
+	}
+
 	// Initialize the HTTP servers
 	err = startHttpServers(c, core, config, lns)
 	if err != nil {
@@ -1558,9 +1566,17 @@ func (c *ServerCommand) Run(args []string) int {
 		}
 	}
 
+	if c.flagCLIDump != "" {
+		c.generatePprofData()
+	}
+
 	core.SetSealReloadFunc(func(ctx context.Context) error {
 		return c.reloadSealsOnLeaderActivation(ctx, core)
 	})
+
+	if c.flagCLIDump != "" {
+		c.generatePprofData()
+	}
 
 	// Output the header that the server has started
 	if !c.logFlags.flagCombineLogs {
@@ -1624,9 +1640,8 @@ func (c *ServerCommand) Run(args []string) int {
 		coreShutdownDoneCh = core.ShutdownDone()
 	}
 
-	cliDumpCh := make(chan struct{})
 	if c.flagCLIDump != "" {
-		go func() { cliDumpCh <- struct{}{} }()
+		c.generatePprofData()
 	}
 
 	// Wait for shutdown
@@ -1822,51 +1837,6 @@ func (c *ServerCommand) Run(args []string) int {
 			}
 
 			c.logger.Info(fmt.Sprintf("Wrote pprof files to: %s", pprofPath))
-		case <-cliDumpCh:
-			path := c.flagCLIDump
-
-			if _, err := os.Stat(path); err != nil && !errors.Is(err, os.ErrNotExist) {
-				c.logger.Error("Checking cli dump path failed", "error", err)
-				continue
-			}
-
-			pprofPath := filepath.Join(path, "vault-pprof")
-			err := os.MkdirAll(pprofPath, os.ModePerm)
-			if err != nil {
-				c.logger.Error("Could not create temporary directory for pprof", "error", err)
-				continue
-			}
-
-			dumps := []string{"goroutine", "heap", "allocs", "threadcreate", "profile"}
-			for _, dump := range dumps {
-				pFile, err := os.Create(filepath.Join(pprofPath, dump))
-				if err != nil {
-					c.logger.Error("error creating pprof file", "name", dump, "error", err)
-					break
-				}
-
-				if dump != "profile" {
-					err = pprof.Lookup(dump).WriteTo(pFile, 0)
-					if err != nil {
-						c.logger.Error("error generating pprof data", "name", dump, "error", err)
-						pFile.Close()
-						break
-					}
-				} else {
-					// CPU profiles need to run for a duration so we're going to run it
-					// just for one second to avoid blocking here.
-					if err := pprof.StartCPUProfile(pFile); err != nil {
-						c.logger.Error("could not start CPU profile: ", err)
-						pFile.Close()
-						break
-					}
-					time.Sleep(time.Second * 1)
-					pprof.StopCPUProfile()
-				}
-				pFile.Close()
-			}
-
-			c.logger.Info(fmt.Sprintf("Wrote startup pprof files to: %s", pprofPath))
 		}
 	}
 	// Notify systemd that the server is shutting down
@@ -3640,6 +3610,55 @@ func SetStorageMigration(b physical.Backend, active bool) error {
 	}
 
 	return b.Put(context.Background(), entry)
+}
+
+func (c *ServerCommand) generatePprofData() {
+	path := c.flagCLIDump
+
+	if _, err := os.Stat(path); err != nil && !errors.Is(err, os.ErrNotExist) {
+		c.logger.Error("Checking cli dump path failed", "error", err)
+		return
+	}
+
+	captureTime := time.Now().UTC()
+	formattedTime := captureTime.Format(fileFriendlyTimeFormat)
+	pprofPath := filepath.Join(path, fmt.Sprintf("vault-pprof-%s", formattedTime))
+	err := os.MkdirAll(pprofPath, os.ModePerm)
+	if err != nil {
+		c.logger.Error("Could not create temporary directory for pprof", "error", err)
+		return
+	}
+
+	dumps := []string{"goroutine", "heap", "allocs", "threadcreate", "profile"}
+	for _, dump := range dumps {
+		pFile, err := os.Create(filepath.Join(pprofPath, dump))
+		if err != nil {
+			c.logger.Error("error creating pprof file", "name", dump, "error", err)
+			break
+		}
+
+		if dump != "profile" {
+			err = pprof.Lookup(dump).WriteTo(pFile, 0)
+			if err != nil {
+				c.logger.Error("error generating pprof data", "name", dump, "error", err)
+				pFile.Close()
+				break
+			}
+		} else {
+			// CPU profiles need to run for a duration so we're going to run it
+			// just for one second to avoid blocking here.
+			if err := pprof.StartCPUProfile(pFile); err != nil {
+				c.logger.Error("could not start CPU profile: ", err)
+				pFile.Close()
+				break
+			}
+			time.Sleep(time.Second * 1)
+			pprof.StopCPUProfile()
+		}
+		pFile.Close()
+	}
+
+	c.logger.Info(fmt.Sprintf("Wrote startup pprof files to: %s", pprofPath))
 }
 
 type grpclogFaker struct {
