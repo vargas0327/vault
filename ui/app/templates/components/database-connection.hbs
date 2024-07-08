@@ -20,77 +20,74 @@
   </p.levelLeft>
 </PageHeader>
 
-{{#if @model.isAvailablePlugin}}
-  {{#if (eq @mode "show")}}
-    <Toolbar>
-      <ToolbarActions>
-        {{#if @model.canDelete}}
-          <Hds::Button
-            @text="Delete connection"
-            @color="secondary"
-            class="toolbar-button"
-            {{on "click" (action (mut this.isDeleteModalActive) true)}}
-            data-test-database-connection-delete
-          />
-        {{/if}}
-        {{#if @model.canReset}}
-          <ConfirmAction
-            @buttonText="Reset connection"
-            class="toolbar-button"
-            @buttonColor="secondary"
-            @onConfirmAction={{action "reset"}}
-            @confirmTitle="Reset connection?"
-            @confirmMessage="This will close the connection and its underlying plugin and restart it with the configuration stored in the barrier."
-            data-test-database-connection-reset
-          />
-        {{/if}}
-        {{#if (or @model.canReset @model.canDelete)}}
-          <div class="toolbar-separator"></div>
-        {{/if}}
-        {{#if @model.canRotateRoot}}
-          {{! template-lint-disable quotes }}
-          <ConfirmAction
-            @buttonText="Rotate root credentials"
-            class="toolbar-button"
-            @buttonColor="secondary"
-            @onConfirmAction={{this.rotate}}
-            @confirmTitle="Rotate credentials?"
-            @confirmMessage='This will rotate the "root" user credentials stored for the database connection. The password will not be accessible once rotated.'
-            @modalColor="warning"
-            data-test-database-connection-rotate
-          />
-          {{! template-lint-enable }}
-        {{/if}}
-        {{#if @model.canAddRole}}
-          <ToolbarSecretLink
-            @secret=""
-            @mode="create"
-            @backend={{@model.backend}}
-            @type="add"
-            @queryParams={{hash initialKey=@model.name itemType="role"}}
-            data-test-secret-create={{true}}
-          >
-            Add role
-          </ToolbarSecretLink>
-        {{/if}}
-        {{#if @model.canEdit}}
-          <ToolbarSecretLink
-            @secret={{@model.id}}
-            @mode="edit"
-            @backend={{@model.backend}}
-            data-test-edit-link={{true}}
-            @replace={{true}}
-          >
-            Edit configuration
-          </ToolbarSecretLink>
-        {{/if}}
-      </ToolbarActions>
-    </Toolbar>
-  {{/if}}
+{{#if (and @model.isAvailablePlugin (eq @mode "show"))}}
+  <Toolbar>
+    <ToolbarActions>
+      {{#if @model.canDelete}}
+        <Hds::Button
+          @text="Delete connection"
+          @color="secondary"
+          class="toolbar-button"
+          {{on "click" (action (mut this.isDeleteModalActive) true)}}
+          data-test-database-connection-delete
+        />
+      {{/if}}
+      {{#if @model.canReset}}
+        <ConfirmAction
+          @buttonText="Reset connection"
+          class="toolbar-button"
+          @buttonColor="secondary"
+          @onConfirmAction={{action "reset"}}
+          @confirmTitle="Reset connection?"
+          @confirmMessage="This will close the connection and its underlying plugin and restart it with the configuration stored in the barrier."
+          data-test-database-connection-reset
+        />
+      {{/if}}
+      {{#if (or @model.canReset @model.canDelete)}}
+        <div class="toolbar-separator"></div>
+      {{/if}}
+      {{#if @model.canRotateRoot}}
+        {{! template-lint-disable quotes }}
+        <ConfirmAction
+          @buttonText="Rotate root credentials"
+          class="toolbar-button"
+          @buttonColor="secondary"
+          @onConfirmAction={{this.rotate}}
+          @confirmTitle="Rotate credentials?"
+          @confirmMessage='This will rotate the "root" user credentials stored for the database connection. The password will not be accessible once rotated.'
+          @modalColor="warning"
+          data-test-database-connection-rotate
+        />
+        {{! template-lint-enable }}
+      {{/if}}
+      {{#if @model.canAddRole}}
+        <ToolbarSecretLink
+          @secret=""
+          @mode="create"
+          @backend={{@model.backend}}
+          @type="add"
+          @queryParams={{hash initialKey=@model.name itemType="role"}}
+          data-test-secret-create={{true}}
+        >
+          Add role
+        </ToolbarSecretLink>
+      {{/if}}
+      {{#if @model.canEdit}}
+        <ToolbarSecretLink
+          @secret={{@model.id}}
+          @mode="edit"
+          @backend={{@model.backend}}
+          data-test-edit-link={{true}}
+          @replace={{true}}
+        >
+          Edit configuration
+        </ToolbarSecretLink>
+      {{/if}}
+    </ToolbarActions>
+  </Toolbar>
 {{/if}}
 
 {{#if (eq @mode "create")}}
-
   {{#if (eq @model.plugin_name "vault-plugin-database-oracle")}}
     <Hds::Alert @type="inline" @color="warning" class="has-bottom-margin-s" data-test-database-oracle-alert as |A|>
       <A.Title>Warning</A.Title>
@@ -105,7 +102,21 @@
   <form {{on "submit" this.handleCreateConnection}} aria-label="create connection form">
     {{#each @model.fieldAttrs as |attr|}}
       {{#if (not-eq attr.options.readOnly true)}}
-        <FormField data-test-field={{true}} @attr={{attr}} @model={{@model}} />
+        <FormField @attr={{attr}} @model={{@model}}>
+          <div class="select is-fullwidth">
+            {{! only "plugin_name" has a "yield" editType }}
+            <select id={{attr.name}} name={{attr.name}} data-test-input={{attr.name}} {{on "change" this.handleSelect}}>
+              {{#if attr.options.noDefault}}
+                <option value="">Select one</option>
+              {{/if}}
+              {{#each this.allDatabasePlugins as |plugin|}}
+                <option selected={{eq @model.plugin_name plugin.value}} value={{plugin.value}} disabled={{plugin.disabled}}>
+                  {{plugin.displayName}}
+                </option>
+              {{/each}}
+            </select>
+          </div>
+        </FormField>
       {{/if}}
     {{/each}}
 

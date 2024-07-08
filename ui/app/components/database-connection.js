@@ -8,6 +8,8 @@ import { service } from '@ember/service';
 import { tracked } from '@glimmer/tracking';
 import { action } from '@ember/object';
 import { waitFor } from '@ember/test-waiters';
+import { getSupportedPlugins } from 'vault/utils/database-helpers';
+import { humanize } from 'vault/helpers/humanize';
 
 const LIST_ROOT_ROUTE = 'vault.cluster.secrets.backend.list-root';
 const SHOW_ROUTE = 'vault.cluster.secrets.backend.show';
@@ -22,15 +24,27 @@ const getErrorMessage = (errors) => {
 };
 
 export default class DatabaseConnectionEdit extends Component {
-  @service store;
-  @service router;
   @service flashMessages;
+  @service router;
+  @service store;
+  @service version;
 
   @tracked
   showPasswordField = false; // used for edit mode
 
   @tracked
   showSaveModal = false; // used for create mode
+
+  get allDatabasePlugins() {
+    const supportedPlugins = getSupportedPlugins();
+    // map over catalog of all DB plugins, add unsupported ones to the list
+    return this.version.pluginCatalog.database.map((pluginKey) => {
+      const supported = supportedPlugins.find(({ value }) => value === pluginKey);
+      return supported
+        ? { value: supported.value, displayName: supported.displayName }
+        : { value: pluginKey, displayName: `${humanize([pluginKey])} (CLI only)`, disabled: true };
+    });
+  }
 
   rotateCredentials(backend, name) {
     const adapter = this.store.adapterFor('database/connection');
@@ -39,6 +53,10 @@ export default class DatabaseConnectionEdit extends Component {
 
   transitionToRoute() {
     return this.router.transitionTo(...arguments);
+  }
+
+  @action handleSelect(event) {
+    this.args.model.plugin_name = event.target.value;
   }
 
   @action

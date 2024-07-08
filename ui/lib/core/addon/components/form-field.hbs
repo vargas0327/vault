@@ -14,7 +14,9 @@
       @docLink={{@attr.options.docLink}}
     />
   {{/unless}}
-  {{#if @attr.options.possibleValues}}
+  {{#if (eq @attr.options.editType "yield")}}
+    {{yield}}
+  {{else if @attr.options.possibleValues}}
     {{#if (eq @attr.options.editType "radio")}}
       <div class="control {{unless this.hasRadioSubText 'columns'}}" data-test-radio-input>
         {{#each (path-or-array @attr.options.possibleValues @model) as |val|}}
@@ -367,8 +369,6 @@
       @helpText={{@attr.options.helpText}}
       @example={{@attr.options.example}}
     />
-  {{else if (eq @attr.options.editType "yield")}}
-    {{yield}}
   {{/if}}
   {{#if this.validationError}}
     <AlertInline

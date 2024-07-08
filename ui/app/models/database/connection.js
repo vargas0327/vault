@@ -8,7 +8,7 @@ import { computed } from '@ember/object';
 import { alias, or } from '@ember/object/computed';
 import lazyCapabilities, { apiPath } from 'vault/macros/lazy-capabilities';
 import fieldToAttrs, { expandAttributeMeta } from 'vault/utils/field-to-attrs';
-import { AVAILABLE_PLUGIN_TYPES } from '../../utils/database-helpers';
+import { AVAILABLE_PLUGIN_TYPES } from 'vault/utils/database-helpers';
 
 /**
  * fieldsToGroups helper fn
@@ -40,8 +40,8 @@ export default Model.extend({
   }),
   plugin_name: attr('string', {
     label: 'Database plugin',
-    possibleValues: AVAILABLE_PLUGIN_TYPES,
     noDefault: true,
+    editType: 'yield', // possibleValues is computed in form component
   }),
 
   // standard

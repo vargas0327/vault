@@ -254,4 +254,9 @@ export default ApplicationAdapter.extend({
 
     return this.ajax(url, 'POST', { data });
   },
+
+  fetchPluginList() {
+    const url = `${this.buildURL()}/plugins/catalog`;
+    return this.ajax(url, 'GET');
+  },
 });

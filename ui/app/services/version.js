@@ -17,6 +17,7 @@ export default class VersionService extends Service {
   @tracked features = [];
   @tracked version = null;
   @tracked type = null;
+  @tracked pluginCatalog = null;
 
   get isEnterprise() {
     return this.type === 'enterprise';
@@ -92,6 +93,13 @@ export default class VersionService extends Service {
     }
   }
 
+  @task
+  *getPlugins() {
+    const adapter = this.store.adapterFor('cluster');
+    const response = yield adapter.fetchPluginList('database');
+    this.pluginCatalog = response.data;
+  }
+
   fetchVersion() {
     return this.getVersion.perform();
   }
@@ -102,5 +110,9 @@ export default class VersionService extends Service {
 
   fetchFeatures() {
     return this.getFeatures.perform();
+  }
+
+  fetchPlugins() {
+    return this.getPlugins.perform();
   }
 }

@@ -228,3 +228,7 @@ export function getRoleFields(type) {
   if (!type) return null;
   return ROLE_FIELDS[type];
 }
+
+export function getSupportedPlugins() {
+  return AVAILABLE_PLUGIN_TYPES.map(({ value, displayName }) => ({ value, displayName }));
+}
