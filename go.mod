@@ -234,6 +234,7 @@ require (
 	github.com/containerd/containerd v1.7.12 // indirect
 	github.com/hashicorp/go-secure-stdlib/httputil v0.1.0 // indirect
 	github.com/mitchellh/go-testing-interface v1.14.1 // indirect
+	github.com/okta/okta-sdk-golang/v4 v4.1.2 // indirect
 	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028 // indirect
 	gopkg.in/go-jose/go-jose.v2 v2.6.3 // indirect
 )
