@@ -673,24 +673,24 @@ func initCommands(ui, serverCmdUi cli.Ui, runOpts *RunOptions) map[string]cli.Co
 				BaseCommand: getBaseCommand(),
 			}, nil
 		},
-		"server": func() (cli.Command, error) {
-			return &ServerCommand{
-				BaseCommand: &BaseCommand{
-					UI:          serverCmdUi,
-					tokenHelper: runOpts.TokenHelper,
-					flagAddress: runOpts.Address,
-				},
-				AuditBackends:        handlers.auditBackends,
-				CredentialBackends:   handlers.credentialBackends,
-				LogicalBackends:      handlers.logicalBackends,
-				PhysicalBackends:     handlers.physicalBackends,
-				ServiceRegistrations: handlers.serviceRegistrations,
-
-				ShutdownCh: MakeShutdownCh(),
-				SighupCh:   MakeSighupCh(),
-				SigUSR2Ch:  MakeSigUSR2Ch(),
-			}, nil
-		},
+		//"server": func() (cli.Command, error) {
+		//	return &ServerCommand{
+		//		BaseCommand: &BaseCommand{
+		//			UI:          serverCmdUi,
+		//			tokenHelper: runOpts.TokenHelper,
+		//			flagAddress: runOpts.Address,
+		//		},
+		//		AuditBackends:        handlers.auditBackends,
+		//		CredentialBackends:   handlers.credentialBackends,
+		//		LogicalBackends:      handlers.logicalBackends,
+		//		PhysicalBackends:     handlers.physicalBackends,
+		//		ServiceRegistrations: handlers.serviceRegistrations,
+		//
+		//		ShutdownCh: MakeShutdownCh(),
+		//		SighupCh:   MakeSighupCh(),
+		//		SigUSR2Ch:  MakeSigUSR2Ch(),
+		//	}, nil
+		//},
 		"ssh": func() (cli.Command, error) {
 			return &SSHCommand{
 				BaseCommand: getBaseCommand(),
